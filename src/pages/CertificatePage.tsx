@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Download, Copy, Share2, CheckCircle, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp, CertificateData } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
@@ -22,19 +20,18 @@ const CertificatePage = () => {
     if (certificate) {
       setGeneratedCert(certificate);
     } else {
-      // Generate new certificate
       const certId = `KAM-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`;
       const platforms = [...new Set(uploadedFiles.map(f => f.platform))];
       
       const newCert: CertificateData = {
         id: certId,
-        workerName: "Gig Worker",
-        period: "October 2024 - December 2024",
-        totalNetIncome: metrics.totalNetIncome,
-        stabilityScore: metrics.stabilityScore,
-        platforms: platforms,
+        workerName: "Rajash Kumar",
+        period: "March 2024",
+        totalNetIncome: 250000,
+        stabilityScore: 82,
+        platforms: platforms.length > 0 ? platforms : ['Zomato', 'Swiggy'],
         dateIssued: new Date(),
-        verificationHash: `SHA-256: ${Math.random().toString(36).substring(2, 15)}...${Math.random().toString(36).substring(2, 6)}`,
+        verificationHash: `SHA-256: ${Math.random().toString(36).substring(2, 15)}`,
       };
 
       setGeneratedCert(newCert);
@@ -49,21 +46,10 @@ const CertificatePage = () => {
     });
   };
 
-  const handleCopyLink = () => {
-    if (generatedCert) {
-      const link = `${window.location.origin}/verify/${generatedCert.id.replace('KAM-', '')}`;
-      navigator.clipboard.writeText(link);
-      toast({
-        title: "Link copied!",
-        description: "Verification link copied to clipboard",
-      });
-    }
-  };
-
   const handleShare = () => {
     toast({
       title: "Share options",
-      description: "Share your certificate via WhatsApp, Email, or SMS",
+      description: "Share your certificate with lenders",
     });
   };
 
@@ -76,151 +62,123 @@ const CertificatePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
-      <div className="container mx-auto max-w-4xl space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">Income Certificate</h1>
-          <p className="text-muted-foreground">QR-verified digital proof of income</p>
-        </div>
-
-        {/* Certificate Preview */}
-        <Card className="p-8 md:p-12 bg-white shadow-hover border-2 border-accent/20">
-          {/* Watermark */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
-            <span className="text-9xl">₹</span>
-          </div>
-
-          <div className="relative space-y-6">
-            {/* Header */}
-            <div className="text-center border-b-2 border-accent pb-6">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <span className="text-3xl font-bold text-gray-900">Kamai</span>
-                <span className="text-3xl text-accent">₹</span>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">🪷</span>
               </div>
-              <h2 className="text-xl font-semibold text-gray-700">Income Certificate</h2>
+              <span className="text-2xl font-bold text-foreground">Kamai</span>
+            </div>
+            <div className="hidden md:flex items-center gap-8">
+              <a href="/dashboard" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
+              <a href="#" className="text-foreground hover:text-accent transition-colors">History</a>
+              <a href="#" className="text-foreground hover:text-accent transition-colors">Settings</a>
+              <Button className="bg-accent hover:bg-accent/90 text-white">Logout</Button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Certificate Preview */}
+        <Card className="p-8 md:p-12 border-2 border-accent shadow-hover mb-8 animate-fade-in">
+          <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">
+                Income Certificate Preview
+              </h1>
+              
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Verified Income</p>
+                <p className="text-5xl font-bold text-foreground mb-2">₹ 2,50,000</p>
+                <p className="text-accent font-medium">+15% Verified Income (March 2024)</p>
+              </div>
             </div>
 
-            {/* Content */}
-            <div className="space-y-4 text-gray-900">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Worker Name</p>
-                  <p className="font-semibold text-lg">{generatedCert.workerName}</p>
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-white text-xl">🪷</span>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">Certificate ID</p>
-                  <p className="font-semibold text-lg">#{generatedCert.id}</p>
-                </div>
+                <span className="text-2xl font-bold text-foreground">Kamai</span>
+              </div>
+              
+              <div className="text-center space-y-1">
+                <p className="text-sm text-muted-foreground">Certificate ID: #KM024-03-A7B9</p>
+                <p className="text-sm text-muted-foreground">Issued to: {generatedCert.workerName}</p>
               </div>
 
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Period</p>
-                <p className="font-semibold">{generatedCert.period}</p>
-              </div>
-
-              <div className="bg-primary/5 p-4 rounded-lg">
-                <p className="text-sm text-gray-500 mb-1">Total Net Income</p>
-                <p className="text-3xl font-bold text-primary">
-                  ₹{generatedCert.totalNetIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500 mb-1">Stability Score</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-2xl font-bold text-gray-900">{generatedCert.stabilityScore}/100</p>
-                    <Badge className="bg-success text-white">Excellent</Badge>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm text-gray-500 mb-2">Platforms</p>
-                <div className="flex flex-wrap gap-2">
-                  {generatedCert.platforms.map((platform) => (
-                    <Badge key={platform} variant="outline" className="border-gray-300">
-                      {platform}
-                    </Badge>
+              <div className="w-48 h-48 bg-white p-4 rounded-xl border-4 border-accent relative">
+                {/* QR Code Placeholder */}
+                <div className="w-full h-full grid grid-cols-8 grid-rows-8 gap-1">
+                  {Array.from({ length: 64 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`${Math.random() > 0.5 ? 'bg-gray-900' : 'bg-white'} rounded-sm`}
+                    />
                   ))}
                 </div>
-              </div>
-
-              {/* QR Code Placeholder */}
-              <div className="flex justify-center py-4">
-                <div className="w-32 h-32 bg-gray-900 rounded-lg flex items-center justify-center">
-                  <div className="w-28 h-28 bg-white rounded grid grid-cols-4 grid-rows-4 gap-1 p-2">
-                    {Array.from({ length: 16 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className={`${Math.random() > 0.5 ? 'bg-gray-900' : 'bg-white'}`}
-                      />
-                    ))}
-                  </div>
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-accent rounded-full flex items-center justify-center">
+                  <span className="text-white text-lg">₹</span>
                 </div>
               </div>
+              <p className="text-sm text-muted-foreground">Scan to Verify</p>
+            </div>
+          </div>
+        </Card>
 
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Verify at</p>
-                <p className="font-mono text-primary text-sm">
-                  kamai.in/verify/{generatedCert.id.replace('KAM-', '')}
-                </p>
+        {/* Recent Platforms */}
+        <Card className="p-8 shadow-card mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Recent Platforms</h2>
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
+                <span className="text-white text-xl">₹</span>
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Platform_march 2024.csv</p>
+                <p className="text-sm text-muted-foreground">20.13.40 48 vepled</p>
               </div>
             </div>
-
-            {/* Footer */}
-            <div className="border-t-2 border-gray-200 pt-6 space-y-2">
-              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
-                <Shield className="h-4 w-4" />
-                <span>Verified by Kamai</span>
+            
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-destructive rounded-full flex items-center justify-center">
+                <span className="text-white font-bold">Z</span>
               </div>
-              <p className="text-xs text-gray-400 text-center font-mono break-all">
-                {generatedCert.verificationHash}
-              </p>
-              <p className="text-xs text-gray-400 text-center">
-                Issued: {new Date(generatedCert.dateIssued).toLocaleDateString('en-IN', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}
-              </p>
+              <span className="font-semibold text-foreground">Zomato</span>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-[#FF5200] rounded-full flex items-center justify-center">
+                <span className="text-white font-bold">S</span>
+              </div>
+              <span className="font-semibold text-foreground">Swiggy</span>
             </div>
           </div>
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <Button
             size="lg"
+            className="bg-primary hover:bg-primary/90 text-white hover-scale"
             onClick={handleDownload}
-            className="shadow-hover hover:scale-105 transition-transform"
           >
-            <Download className="mr-2 h-5 w-5" />
             Download PDF
           </Button>
+
           <Button
             size="lg"
             variant="outline"
-            onClick={handleCopyLink}
-          >
-            <Copy className="mr-2 h-5 w-5" />
-            Copy Verification Link
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
+            className="border-2 border-accent text-accent hover:bg-accent hover:text-white hover-scale"
             onClick={handleShare}
           >
-            <Share2 className="mr-2 h-5 w-5" />
-            Share Certificate
+            Share with Lender
           </Button>
-        </div>
-
-        {/* Trust Badge */}
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <CheckCircle className="h-4 w-4 text-success" />
-          <span>This certificate is cryptographically secured and QR-verifiable</span>
         </div>
       </div>
     </div>

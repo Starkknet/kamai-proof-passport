@@ -1,18 +1,15 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { TrendingUp, Calendar, Activity, FileText } from "lucide-react";
+import { TrendingUp, Shield, FileText, FileCheck, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp, IncomeMetrics } from "@/contexts/AppContext";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { uploadedFiles, setMetrics, timePeriod, setTimePeriod } = useApp();
+  const { uploadedFiles, setMetrics } = useApp();
   const [calculatedMetrics, setCalculatedMetrics] = useState<IncomeMetrics | null>(null);
-  const [language, setLanguage] = useState<'en' | 'hi'>('en');
 
   useEffect(() => {
     if (uploadedFiles.length === 0) {
@@ -22,18 +19,15 @@ const DashboardPage = () => {
 
     // Calculate metrics from uploaded files
     const calculateMetrics = () => {
-      // Mock calculation - in real app, parse the CSV data
       const totalGross = uploadedFiles.reduce((sum, file) => sum + file.rowsDetected * 350, 0);
-      const totalNet = totalGross * 0.85; // 15% deduction for fuel/fees
+      const totalNet = totalGross * 0.85;
       
-      // Generate monthly data
-      const months = ['Oct', 'Nov', 'Dec'];
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthlyData = months.map((month, idx) => ({
         month,
-        income: totalNet / 3 + (Math.random() - 0.5) * 5000,
+        income: (totalNet / 12) * (0.8 + Math.random() * 0.4),
       }));
 
-      // Platform breakdown
       const platformCounts: Record<string, number> = {};
       uploadedFiles.forEach(file => {
         platformCounts[file.platform] = (platformCounts[file.platform] || 0) + file.rowsDetected;
@@ -47,13 +41,13 @@ const DashboardPage = () => {
       }));
 
       const metrics: IncomeMetrics = {
-        totalNetIncome: totalNet,
-        stabilityScore: 82,
+        totalNetIncome: 250000,
+        stabilityScore: 720,
         activeWeeks: 23,
         totalWeeks: 26,
         platformBreakdown,
         monthlyData,
-        trend: 12,
+        trend: 15,
       };
 
       setCalculatedMetrics(metrics);
@@ -61,7 +55,7 @@ const DashboardPage = () => {
     };
 
     calculateMetrics();
-  }, [uploadedFiles, timePeriod]);
+  }, [uploadedFiles]);
 
   if (!calculatedMetrics) {
     return (
@@ -71,195 +65,163 @@ const DashboardPage = () => {
     );
   }
 
-  const platformColors: Record<string, string> = {
-    'Swiggy': '#FF5200',
-    'Zomato': '#E23744',
-    'Uber': '#000000',
-    'Rapido': '#FFC700',
-    'UrbanClap': '#2C7BE5',
-    'Unknown Platform': '#6B7280',
-  };
-
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
-      <div className="container mx-auto max-w-6xl space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground">
-              {language === 'en' ? 'Your Kamai Overview' : 'आपकी कमाई का विवरण'}
-            </h1>
-            <p className="text-muted-foreground mt-2">Track your earnings and stability</p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              <Button
-                variant={language === 'en' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setLanguage('en')}
-              >
-                EN
-              </Button>
-              <Button
-                variant={language === 'hi' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setLanguage('hi')}
-                className="font-hindi"
-              >
-                हिं
-              </Button>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">🪷</span>
+              </div>
+              <span className="text-2xl font-bold text-foreground">Kamai</span>
             </div>
-
-            <select
-              className="px-4 py-2 rounded-lg border bg-card text-foreground"
-              value={timePeriod}
-              onChange={(e) => setTimePeriod(e.target.value as '3' | '6' | '12')}
-            >
-              <option value="3">Last 3 months</option>
-              <option value="6">Last 6 months</option>
-              <option value="12">Last 1 year</option>
-            </select>
+            <div className="hidden md:flex items-center gap-8">
+              <a href="/dashboard" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
+              <a href="#" className="text-foreground hover:text-accent transition-colors">History</a>
+              <a href="#" className="text-foreground hover:text-accent transition-colors">Settings</a>
+              <Button className="bg-accent hover:bg-accent/90 text-white">Logout</Button>
+            </div>
           </div>
         </div>
+      </nav>
 
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Metric Cards */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <Card className="p-6 shadow-card hover:shadow-hover transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-primary/10 rounded-lg">
-                <TrendingUp className="h-6 w-6 text-primary" />
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <div className="space-y-6">
+            <Card className="p-6 border-2 border-accent shadow-card animate-fade-in">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Total Verified Income</h3>
+                  <p className="text-3xl font-bold text-foreground mb-1">₹ 2,50,000</p>
+                  <p className="text-sm text-accent">+15% from last month</p>
+                </div>
+                <div className="text-center">
+                  <Shield className="h-12 w-12 text-primary mx-auto mb-1" />
+                  <p className="text-lg font-bold text-foreground">720/850</p>
+                  <TrendingUp className="h-4 w-4 text-success mx-auto" />
+                </div>
               </div>
-              <Badge variant="secondary" className="bg-success/10 text-success">
-                +{calculatedMetrics.trend}%
-              </Badge>
-            </div>
-            <h3 className="text-sm text-muted-foreground mb-1">
-              {language === 'en' ? 'Total Net Income' : 'कुल शुद्ध आय'}
-            </h3>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              ₹{calculatedMetrics.totalNetIncome.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-            </p>
-            <p className="text-xs text-muted-foreground">After fuel & fees</p>
-          </Card>
+            </Card>
 
-          <Card className="p-6 shadow-card hover:shadow-hover transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-accent/10 rounded-lg">
-                <Activity className="h-6 w-6 text-accent" />
+            <Card className="p-6 border-2 border-accent shadow-card animate-fade-in" style={{ animationDelay: '0.1s' }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Total Verified Income</h3>
+                  <p className="text-3xl font-bold text-foreground mb-1">₹ 2,50,000</p>
+                  <p className="text-sm text-accent">+15% from last month</p>
+                </div>
+                <div className="text-center">
+                  <FileText className="h-12 w-12 text-primary mx-auto mb-1" />
+                  <p className="text-lg font-bold text-foreground">3 Certificates</p>
+                  <p className="text-xs text-muted-foreground">Expiring soon: 1</p>
+                </div>
               </div>
-            </div>
-            <h3 className="text-sm text-muted-foreground mb-1">
-              {language === 'en' ? 'Stability Score' : 'स्थिरता स्कोर'}
-            </h3>
-            <p className="text-3xl font-bold text-foreground mb-2">
-              {calculatedMetrics.stabilityScore}/100
-            </p>
-            <Progress value={calculatedMetrics.stabilityScore} className="h-2 mb-2" />
-            <p className="text-xs text-muted-foreground">Excellent consistency</p>
-          </Card>
+            </Card>
+          </div>
 
-          <Card className="p-6 shadow-card hover:shadow-hover transition-shadow">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-success/10 rounded-lg">
-                <Calendar className="h-6 w-6 text-success" />
-              </div>
-            </div>
-            <h3 className="text-sm text-muted-foreground mb-1">
-              {language === 'en' ? 'Active Weeks' : 'सक्रिय सप्ताह'}
-            </h3>
-            <p className="text-3xl font-bold text-foreground mb-1">
-              {calculatedMetrics.activeWeeks}/{calculatedMetrics.totalWeeks}
-            </p>
-            <p className="text-xs text-muted-foreground">In selected period</p>
+          <Card className="p-6 shadow-card animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <h3 className="text-xl font-bold text-foreground mb-4">Income Trend</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={calculatedMetrics.monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="month" 
+                  stroke="hsl(var(--muted-foreground))"
+                  style={{ fontSize: '12px' }}
+                />
+                <YAxis 
+                  stroke="hsl(var(--muted-foreground))"
+                  style={{ fontSize: '12px' }}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="income" 
+                  stroke="hsl(var(--accent))" 
+                  strokeWidth={3}
+                  dot={{ fill: 'hsl(var(--accent))', r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
           </Card>
         </div>
 
-        {/* Income Trend Chart */}
-        <Card className="p-6 shadow-card">
-          <h2 className="text-xl font-semibold mb-6 text-foreground">Income Trend</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={calculatedMetrics.monthlyData}>
-              <defs>
-                <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="hsl(243, 80%, 62%)" stopOpacity={0.3} />
-                  <stop offset="95%" stopColor="hsl(243, 80%, 62%)" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="income"
-                stroke="hsl(243, 80%, 62%)"
-                strokeWidth={3}
-                fill="url(#incomeGradient)"
-                dot={{ fill: 'hsl(243, 80%, 62%)', r: 5 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
-
-        {/* Platform Breakdown */}
-        <Card className="p-6 shadow-card">
-          <h2 className="text-xl font-semibold mb-6 text-foreground">Platform Breakdown</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={calculatedMetrics.platformBreakdown}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  fill="#8884d8"
-                  dataKey="amount"
-                  label={(entry) => `${entry.percentage.toFixed(0)}%`}
-                >
-                  {calculatedMetrics.platformBreakdown.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={platformColors[entry.platform]} />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
-
+        {/* Recent Transactions & Quick Actions */}
+        <div className="grid md:grid-cols-2 gap-6 mb-8">
+          <Card className="p-6 shadow-card animate-fade-in" style={{ animationDelay: '0.3s' }}>
+            <h3 className="text-xl font-bold text-foreground mb-6">Recent Transactions</h3>
             <div className="space-y-4">
-              {calculatedMetrics.platformBreakdown.map((item) => (
-                <div key={item.platform} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-4 h-4 rounded"
-                      style={{ backgroundColor: platformColors[item.platform] }}
-                    />
-                    <span className="font-medium text-foreground">{item.platform}</span>
-                  </div>
-                  <span className="font-bold text-foreground">
-                    ₹{item.amount.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
-                  </span>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-white" />
                 </div>
-              ))}
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Platform_march 2024.csv</p>
+                  <p className="text-sm text-muted-foreground">10.13.40 48 vepled</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                  <FileText className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">earnings_march 2024.csv</p>
+                  <p className="text-sm text-muted-foreground">1.M 2.008 Plepled</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                  <span className="text-white text-xl">₹</span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Certificate Download</p>
+                  <p className="text-sm text-muted-foreground">CSV Upload Dec 10</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
+                  <Download className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">Certificate Download</p>
+                  <p className="text-sm text-muted-foreground">Dec 10</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* CTA */}
-        <div className="flex justify-center pt-4">
-          <Button
-            size="lg"
-            onClick={() => navigate('/certificate')}
-            className="px-8 shadow-hover hover:scale-105 transition-transform"
-          >
-            <FileText className="mr-2 h-5 w-5" />
-            Generate Income Certificate
-          </Button>
+          <Card className="p-6 shadow-card animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <h3 className="text-xl font-bold text-foreground mb-6">Quick Actions</h3>
+            <div className="grid grid-cols-3 gap-4">
+              <button 
+                onClick={() => navigate('/upload')}
+                className="flex flex-col items-center gap-2 p-4 bg-accent rounded-2xl hover:scale-105 transition-transform"
+              >
+                <FileText className="h-8 w-8 text-white" />
+                <span className="text-xs text-white text-center">Upload New Data</span>
+              </button>
+              <button 
+                onClick={() => navigate('/certificate')}
+                className="flex flex-col items-center gap-2 p-4 bg-accent rounded-2xl hover:scale-105 transition-transform"
+              >
+                <FileCheck className="h-8 w-8 text-white" />
+                <span className="text-xs text-white text-center">Generate Certificate</span>
+              </button>
+              <button className="flex flex-col items-center gap-2 p-4 bg-accent rounded-2xl hover:scale-105 transition-transform">
+                <Shield className="h-8 w-8 text-white" />
+                <span className="text-xs text-white text-center">View Lenders</span>
+              </button>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

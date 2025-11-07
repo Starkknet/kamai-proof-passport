@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Trash2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileText, Trash2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp, UploadedFile } from "@/contexts/AppContext";
 import Papa from "papaparse";
@@ -92,107 +92,93 @@ const UploadPage = () => {
     handleFileUpload(e.dataTransfer.files);
   };
 
-  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileUpload(e.target.files);
-  };
-
-  const getPlatformColor = (platform: string) => {
-    const colors: Record<string, string> = {
-      'Swiggy': 'bg-orange-500',
-      'Zomato': 'bg-red-500',
-      'Uber': 'bg-black',
-      'Rapido': 'bg-yellow-500',
-      'UrbanClap': 'bg-blue-500',
-    };
-    return colors[platform] || 'bg-gray-500';
-  };
-
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
-      <div className="container mx-auto max-w-4xl space-y-8">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-foreground">Upload Your Earnings</h1>
-          <p className="text-muted-foreground">
-            Upload CSV files from your gig platforms to get started
-          </p>
-        </div>
-
-        {/* Upload Card */}
-        <Card className="p-8 shadow-card">
-          <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-all ${
-              isDragging
-                ? 'border-primary bg-primary/5'
-                : 'border-border hover:border-primary/50'
-            }`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".csv"
-              onChange={handleFileInputChange}
-              className="hidden"
-            />
-
-            <div className="space-y-4">
-              <div className="flex justify-center">
-                <div className="p-4 bg-primary/10 rounded-full">
-                  <FileText className="h-12 w-12 text-primary" />
-                </div>
+    <div className="min-h-screen bg-background">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                <span className="text-white text-xl">🪷</span>
               </div>
+              <span className="text-2xl font-bold text-foreground">Kamai</span>
+            </div>
+            <div className="hidden md:flex items-center gap-8">
+              <a href="/upload" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
+              <a href="#" className="text-foreground hover:text-accent transition-colors">History</a>
+              <a href="#" className="text-foreground hover:text-accent transition-colors">Settings</a>
+              <Button className="bg-accent hover:bg-accent/90 text-white">Logout</Button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-              {isProcessing ? (
-                <div className="space-y-2">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-                  <p className="text-sm text-muted-foreground">Processing your file...</p>
-                </div>
-              ) : (
-                <>
-                  <div>
-                    <p className="text-lg font-medium text-foreground mb-2">
-                      Drop your earnings CSVs here or click to browse
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Supported: Swiggy, Zomato, Uber, Rapido, UrbanClap
-                    </p>
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        {/* Upload Card */}
+        <Card className="p-8 md:p-12 shadow-hover mb-8">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground">Upload Your Earnings Data</h1>
+              <p className="text-muted-foreground">Supported formats: CSV, Excel</p>
+              <Button 
+                className="bg-accent hover:bg-accent/90 text-white" 
+                size="lg"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                ₹ Upload Data
+              </Button>
+            </div>
+            
+            <div
+              className={`border-2 border-dashed border-accent rounded-2xl p-12 text-center cursor-pointer transition-all ${
+                isDragging ? 'bg-accent/5 scale-105' : 'hover:bg-accent/5'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={(e) => handleFileUpload(e.target.files)}
+                className="hidden"
+              />
+              <div className="space-y-4">
+                <div className="w-24 h-24 mx-auto bg-primary rounded-full flex items-center justify-center relative">
+                  <Upload className="w-12 h-12 text-white" />
+                  <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-accent rounded-full flex items-center justify-center">
+                    <span className="text-white text-xl">₹</span>
                   </div>
-                  <Button variant="outline" size="lg">
-                    <Upload className="mr-2 h-5 w-5" />
-                    Select File
-                  </Button>
-                </>
-              )}
+                </div>
+                {isProcessing ? (
+                  <p className="text-muted-foreground">Processing...</p>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold text-foreground">Drag & Drop your CSV file here</h3>
+                    <p className="text-muted-foreground">or browse files</p>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </Card>
 
         {/* Recent Uploads */}
         {uploadedFiles.length > 0 && (
-          <Card className="p-6 shadow-card">
-            <h2 className="text-xl font-semibold mb-4 text-foreground">Recent Uploads</h2>
-            <div className="space-y-3">
+          <Card className="p-8 shadow-card">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Recent Uploads</h2>
+            <div className="grid md:grid-cols-2 gap-4">
               {uploadedFiles.map((file) => (
-                <div
-                  key={file.id}
-                  className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
-                >
-                  <div className="flex items-center gap-4 flex-1">
-                    <CheckCircle2 className="h-5 w-5 text-success flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-foreground truncate">{file.filename}</p>
-                      <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-muted-foreground">
-                        <span className={`px-2 py-0.5 ${getPlatformColor(file.platform)} text-white rounded text-xs`}>
-                          {file.platform}
-                        </span>
-                        <span>• {file.rowsDetected} rows</span>
-                        <span>• {new Date(file.dateUploaded).toLocaleDateString()}</span>
-                      </div>
-                    </div>
+                <div key={file.id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl">
+                  <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-foreground truncate">{file.filename}</p>
+                    <p className="text-sm text-muted-foreground">{file.rowsDetected} rows uploaded</p>
                   </div>
                   <Button
                     variant="ghost"
@@ -200,32 +186,22 @@ const UploadPage = () => {
                     onClick={() => removeUploadedFile(file.id)}
                     className="flex-shrink-0"
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
                   </Button>
                 </div>
               ))}
             </div>
+
+            <div className="mt-8 flex justify-end">
+              <Button
+                className="bg-accent hover:bg-accent/90 text-white"
+                onClick={() => navigate('/dashboard')}
+              >
+                Upload Data
+              </Button>
+            </div>
           </Card>
         )}
-
-        {/* Action Button */}
-        {uploadedFiles.length > 0 && (
-          <div className="flex justify-center">
-            <Button
-              size="lg"
-              onClick={() => navigate('/dashboard')}
-              className="px-8 shadow-hover hover:scale-105 transition-transform"
-            >
-              Proceed to Dashboard
-            </Button>
-          </div>
-        )}
-
-        {/* Trust Badge */}
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <AlertCircle className="h-4 w-4" />
-          <span>Your data is private and will be auto-deleted after 30 days</span>
-        </div>
       </div>
     </div>
   );

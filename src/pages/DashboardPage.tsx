@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { TrendingUp, Shield, FileText, FileCheck, Download } from "lucide-react";
+import { TrendingUp, Shield, FileText, FileCheck, Download, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp, IncomeMetrics } from "@/contexts/AppContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const { uploadedFiles, setMetrics } = useApp();
   const [calculatedMetrics, setCalculatedMetrics] = useState<IncomeMetrics | null>(null);
 
@@ -81,7 +83,15 @@ const DashboardPage = () => {
               <a href="/" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
               <a href="/history" className="text-foreground hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-foreground hover:text-accent transition-colors">Settings</a>
-              <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>Logout</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={signOut}
+                className="border-accent text-accent hover:bg-accent hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>

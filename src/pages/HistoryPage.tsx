@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2, Clock } from "lucide-react";
+import { CheckCircle2, Clock, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const HistoryPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const certificates = [
     { id: "#KM023-01-XYZ123", date: "Jan 15, 2023", status: "Verified", icon: "✓" },
@@ -30,7 +32,13 @@ const HistoryPage = () => {
               <a href="/" className="text-foreground font-medium hover:text-accent transition-colors">Dashboard</a>
               <a href="/history" className="text-accent font-medium border-b-2 border-accent pb-1">History</a>
               <a href="/settings" className="text-foreground font-medium hover:text-accent transition-colors">Settings</a>
-              <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={signOut}
+                className="border-accent text-accent hover:bg-accent hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>

@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ConnectPlatformsPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const platforms = [
     { name: "Zomato", category: "Food Delivery", icon: "Z", color: "bg-red-500", connected: false },
@@ -34,7 +36,13 @@ const ConnectPlatformsPage = () => {
               <a href="/" className="text-foreground font-medium hover:text-accent transition-colors">Dashboard</a>
               <a href="/history" className="text-foreground font-medium hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-foreground font-medium hover:text-accent transition-colors">Settings</a>
-              <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={signOut}
+                className="border-accent text-accent hover:bg-accent hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>

@@ -1,14 +1,16 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Trash2 } from "lucide-react";
+import { Upload, FileText, Trash2, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useApp, UploadedFile } from "@/contexts/AppContext";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const UploadPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const { uploadedFiles, addUploadedFile, removeUploadedFile } = useApp();
   const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
@@ -108,7 +110,15 @@ const UploadPage = () => {
               <a href="/" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
               <a href="/history" className="text-foreground hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-foreground hover:text-accent transition-colors">Settings</a>
-              <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>Logout</Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={signOut}
+                className="border-accent text-accent hover:bg-accent hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </div>
         </div>

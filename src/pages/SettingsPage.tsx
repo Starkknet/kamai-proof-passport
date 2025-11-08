@@ -1,12 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Camera } from "lucide-react";
+import { Camera, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   const [activeTab, setActiveTab] = useState("security");
 
   return (
@@ -26,7 +28,13 @@ const SettingsPage = () => {
               <a href="/" className="text-primary font-medium hover:text-accent transition-colors">Dashboard</a>
               <a href="/history" className="text-primary font-medium hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-accent font-medium border-b-2 border-accent pb-1">Settings</a>
-              <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={signOut}
+                className="border-accent text-accent hover:bg-accent hover:text-white"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
                 Logout
               </Button>
             </div>

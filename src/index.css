@@ -8,46 +8,45 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Kamai Design System - India-first color palette */
-    --background: 40 33% 98%; /* Cream #FAF9F6 */
-    --foreground: 240 10% 15%;
-
+    /* Kamai Brand Colors - Exact from UI mockups */
+    --background: 38 33% 97%; /* Cream White #FAF8F3 */
+    --foreground: 237 69% 25%; /* Deep Indigo #1E2066 */
+    
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 15%;
-
+    --card-foreground: 237 69% 25%;
+    
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 15%;
-
-    --primary: 243 80% 62%; /* Indigo #4F46E5 */
+    --popover-foreground: 237 69% 25%;
+    
+    /* Primary: Deep Indigo */
+    --primary: 237 69% 25%; /* #1E2066 */
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 240 5% 96%;
-    --secondary-foreground: 240 10% 15%;
-
-    --muted: 240 5% 96%;
-    --muted-foreground: 240 4% 46%;
-
-    --accent: 24 100% 60%; /* Saffron #FF9933 */
+    
+    /* Secondary: Lighter variant */
+    --secondary: 237 30% 90%;
+    --secondary-foreground: 237 69% 25%;
+    
+    /* Accent: Saffron Orange */
+    --accent: 30 94% 54%; /* #F7931A */
     --accent-foreground: 0 0% 100%;
-
+    
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 29%; /* #4B4B4B */
+    
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
-    --border: 240 6% 90%;
-    --input: 240 6% 90%;
-    --ring: 243 80% 62%;
-
-    --radius: 1rem; /* 16px for rounded cards */
-
-    /* Trust & Success colors */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
     
+    --border: 30 30% 90%;
+    --input: 30 30% 90%;
+    --ring: 30 94% 54%;
+    
+    --radius: 1rem;
+    
+    /* Success & Warning */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-
-    /* Gradient overlays */
-    --gradient-hero: linear-gradient(135deg, hsl(24 100% 60% / 0.1), hsl(243 80% 62% / 0.1));
     
     /* Shadows for depth */
     --shadow-card: 0 4px 16px hsl(240 10% 15% / 0.08);

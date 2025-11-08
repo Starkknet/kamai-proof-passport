@@ -23,7 +23,7 @@ const SettingsPage = () => {
             </div>
 
             <div className="hidden md:flex items-center gap-8">
-              <a href="/dashboard" className="text-primary font-medium hover:text-accent transition-colors">Dashboard</a>
+              <a href="/" className="text-primary font-medium hover:text-accent transition-colors">Dashboard</a>
               <a href="/history" className="text-primary font-medium hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-accent font-medium border-b-2 border-accent pb-1">Settings</a>
               <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>

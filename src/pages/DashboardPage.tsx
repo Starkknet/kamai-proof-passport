@@ -71,17 +71,17 @@ const DashboardPage = () => {
       <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
               <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                 <span className="text-white text-xl">🪷</span>
               </div>
-              <span className="text-2xl font-bold text-foreground">Kamai</span>
+              <span className="text-2xl font-bold text-accent">Kamai</span>
             </div>
             <div className="hidden md:flex items-center gap-8">
-              <a href="/dashboard" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
-              <a href="#" className="text-foreground hover:text-accent transition-colors">History</a>
-              <a href="#" className="text-foreground hover:text-accent transition-colors">Settings</a>
-              <Button className="bg-accent hover:bg-accent/90 text-white">Logout</Button>
+              <a href="/" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
+              <a href="/history" className="text-foreground hover:text-accent transition-colors">History</a>
+              <a href="/settings" className="text-foreground hover:text-accent transition-colors">Settings</a>
+              <Button className="bg-accent hover:bg-accent/90 text-white" onClick={() => navigate('/')}>Logout</Button>
             </div>
           </div>
         </div>

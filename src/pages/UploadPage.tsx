@@ -1,21 +1,29 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Upload, FileText, Trash2, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useApp, UploadedFile } from "@/contexts/AppContext";
+import { useApp } from "@/contexts/AppContext";
 import Papa from "papaparse";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const UploadPage = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { uploadedFiles, addUploadedFile, removeUploadedFile } = useApp();
+  const { user, signOut } = useAuth();
+  const { uploadedFiles, fetchUploadedFiles, removeUploadedFile } = useApp();
   const { toast } = useToast();
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch uploaded files when component mounts
+  useEffect(() => {
+    if (user) {
+      fetchUploadedFiles();
+    }
+  }, [user]);
 
   const detectPlatform = (headers: string[]): string => {
     const headerStr = headers.join(' ').toLowerCase();
@@ -27,8 +35,18 @@ const UploadPage = () => {
     return 'Unknown Platform';
   };
 
-  const handleFileUpload = (files: FileList | null) => {
+  const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to upload files",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
 
     const file = files[0];
     if (!file.name.endsWith('.csv')) {
@@ -45,27 +63,101 @@ const UploadPage = () => {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
-        const headers = results.meta.fields || [];
-        const platform = detectPlatform(headers);
-        const rowCount = results.data.length;
+      complete: async (results) => {
+        try {
+          const headers = results.meta.fields || [];
+          const platform = detectPlatform(headers);
+          const rowCount = results.data.length;
 
-        const uploadedFile: UploadedFile = {
-          id: Date.now().toString(),
-          filename: file.name,
-          platform: platform,
-          rowsDetected: rowCount,
-          dateUploaded: new Date(),
-          data: results.data,
-        };
+          // Insert into uploaded_files table
+          const { data: uploadData, error: uploadError } = await supabase
+            .from('uploaded_files')
+            .insert({
+              user_id: user.id,
+              filename: file.name,
+              platform: platform,
+              rows_detected: rowCount,
+              date_uploaded: new Date().toISOString(),
+            })
+            .select()
+            .single();
 
-        addUploadedFile(uploadedFile);
-        setIsProcessing(false);
+          if (uploadError) throw uploadError;
 
-        toast({
-          title: "File uploaded successfully!",
-          description: `${rowCount} rows detected from ${platform}`,
-        });
+          // Parse and prepare transactions
+          const transactions = [];
+          for (const row of results.data as any[]) {
+            // Find amount column
+            const amountKey = Object.keys(row).find(key => 
+              ['amount', 'Amount', 'earnings', 'Earnings', 'payment', 'Payment', 'payout'].includes(key)
+            );
+            
+            // Find date column
+            const dateKey = Object.keys(row).find(key =>
+              ['date', 'Date', 'transaction_date', 'trip_date', 'dt'].includes(key)
+            );
+            
+            // Find trip ID column
+            const tripIdKey = Object.keys(row).find(key =>
+              ['trip_id', 'order_id', 'delivery_id'].includes(key)
+            );
+
+            // Parse amount (remove ₹, commas, etc.)
+            let amount = 0;
+            if (amountKey && row[amountKey]) {
+              const amountStr = String(row[amountKey]).replace(/[₹,\s]/g, '');
+              amount = parseFloat(amountStr) || 0;
+            }
+
+            // Parse date
+            let txnDate = null;
+            if (dateKey && row[dateKey]) {
+              const dateVal = new Date(row[dateKey]);
+              if (!isNaN(dateVal.getTime())) {
+                txnDate = dateVal.toISOString();
+              }
+            }
+
+            transactions.push({
+              user_id: user.id,
+              upload_id: uploadData.id,
+              platform: platform,
+              amount_numeric: amount,
+              txn_date: txnDate,
+              trip_id: tripIdKey ? row[tripIdKey] : null,
+              meta_jsonb: row,
+            });
+          }
+
+          // Batch insert transactions (1000 at a time)
+          const chunkSize = 1000;
+          for (let i = 0; i < transactions.length; i += chunkSize) {
+            const chunk = transactions.slice(i, i + chunkSize);
+            const { error: txnError } = await supabase
+              .from('transactions')
+              .insert(chunk);
+            
+            if (txnError) throw txnError;
+          }
+
+          // Refresh uploaded files list
+          await fetchUploadedFiles();
+
+          setIsProcessing(false);
+
+          toast({
+            title: "File uploaded successfully!",
+            description: `${rowCount} transactions saved from ${platform}`,
+          });
+        } catch (error: any) {
+          console.error('Upload error:', error);
+          setIsProcessing(false);
+          toast({
+            title: "Failed to save",
+            description: error.message || "Please try again",
+            variant: "destructive",
+          });
+        }
       },
       error: (error) => {
         setIsProcessing(false);
@@ -135,6 +227,7 @@ const UploadPage = () => {
                 className="bg-accent hover:bg-accent/90 text-white" 
                 size="lg"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessing}
               >
                 ₹ Upload Data
               </Button>
@@ -164,7 +257,10 @@ const UploadPage = () => {
                   </div>
                 </div>
                 {isProcessing ? (
-                  <p className="text-muted-foreground">Processing...</p>
+                  <>
+                    <p className="text-muted-foreground">Processing...</p>
+                    <p className="text-sm text-muted-foreground mt-2">Saving to database...</p>
+                  </>
                 ) : (
                   <>
                     <h3 className="text-xl font-semibold text-foreground">Drag & Drop your CSV file here</h3>
@@ -188,12 +284,15 @@ const UploadPage = () => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-foreground truncate">{file.filename}</p>
-                    <p className="text-sm text-muted-foreground">{file.rowsDetected} rows uploaded</p>
+                    <p className="text-sm text-muted-foreground">{file.rows_detected} rows uploaded</p>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => removeUploadedFile(file.id)}
+                    onClick={async () => {
+                      await removeUploadedFile(file.id);
+                      await fetchUploadedFiles();
+                    }}
                     className="flex-shrink-0"
                   >
                     <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />

@@ -6,60 +6,104 @@ import { useNavigate } from "react-router-dom";
 import { useApp, IncomeMetrics } from "@/contexts/AppContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { uploadedFiles, setMetrics } = useApp();
+  const { user, signOut } = useAuth();
+  const { fetchTransactions, setMetrics } = useApp();
   const [calculatedMetrics, setCalculatedMetrics] = useState<IncomeMetrics | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (uploadedFiles.length === 0) {
-      navigate('/upload');
-      return;
-    }
+    const loadData = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
 
-    // Calculate metrics from uploaded files
-    const calculateMetrics = () => {
-      const totalGross = uploadedFiles.reduce((sum, file) => sum + file.rowsDetected * 350, 0);
-      const totalNet = totalGross * 0.85;
-      
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const monthlyData = months.map((month, idx) => ({
-        month,
-        income: (totalNet / 12) * (0.8 + Math.random() * 0.4),
-      }));
+      setIsLoading(true);
 
-      const platformCounts: Record<string, number> = {};
-      uploadedFiles.forEach(file => {
-        platformCounts[file.platform] = (platformCounts[file.platform] || 0) + file.rowsDetected;
-      });
+      try {
+        // Fetch transactions from database
+        const { data: transactions, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('txn_date', { ascending: true });
 
-      const totalRows = Object.values(platformCounts).reduce((a, b) => a + b, 0);
-      const platformBreakdown = Object.entries(platformCounts).map(([platform, count]) => ({
-        platform,
-        amount: (count / totalRows) * totalNet,
-        percentage: (count / totalRows) * 100,
-      }));
+        if (error) throw error;
 
-      const metrics: IncomeMetrics = {
-        totalNetIncome: 250000,
-        stabilityScore: 720,
-        activeWeeks: 23,
-        totalWeeks: 26,
-        platformBreakdown,
-        monthlyData,
-        trend: 15,
-      };
+        if (!transactions || transactions.length === 0) {
+          navigate('/upload');
+          return;
+        }
 
-      setCalculatedMetrics(metrics);
-      setMetrics(metrics);
+        // Calculate metrics from real transaction data
+        const totalIncome = transactions.reduce((sum, txn) => sum + (txn.amount_numeric || 0), 0);
+        const totalNet = totalIncome * 0.85; // 15% deduction
+
+        // Group by month
+        const monthlyMap: Record<string, number> = {};
+        transactions.forEach(txn => {
+          if (txn.txn_date) {
+            const date = new Date(txn.txn_date);
+            const monthKey = date.toLocaleDateString('en-US', { month: 'short' });
+            monthlyMap[monthKey] = (monthlyMap[monthKey] || 0) + (txn.amount_numeric || 0);
+          }
+        });
+
+        const monthlyData = Object.entries(monthlyMap).map(([month, income]) => ({
+          month,
+          income: income * 0.85,
+        }));
+
+        // Group by platform
+        const platformMap: Record<string, number> = {};
+        transactions.forEach(txn => {
+          platformMap[txn.platform] = (platformMap[txn.platform] || 0) + (txn.amount_numeric || 0);
+        });
+
+        const totalPlatformIncome = Object.values(platformMap).reduce((a, b) => a + b, 0);
+        const platformBreakdown = Object.entries(platformMap).map(([platform, amount]) => ({
+          platform,
+          amount: amount * 0.85,
+          percentage: (amount / totalPlatformIncome) * 100,
+        }));
+
+        // Calculate stability metrics
+        const uniqueDates = new Set(
+          transactions
+            .filter(txn => txn.txn_date)
+            .map(txn => new Date(txn.txn_date!).toISOString().split('T')[0])
+        );
+        const activeWeeks = Math.floor(uniqueDates.size / 7);
+        const totalWeeks = 26; // Assuming 6 months
+        const stabilityScore = Math.min(850, Math.floor((activeWeeks / totalWeeks) * 850));
+
+        const metrics: IncomeMetrics = {
+          totalNetIncome: totalNet,
+          stabilityScore,
+          activeWeeks,
+          totalWeeks,
+          platformBreakdown,
+          monthlyData,
+          trend: 15,
+        };
+
+        setCalculatedMetrics(metrics);
+        setMetrics(metrics);
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    calculateMetrics();
-  }, [uploadedFiles]);
+    loadData();
+  }, [user]);
 
-  if (!calculatedMetrics) {
+  if (isLoading || !calculatedMetrics) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full" />
@@ -105,12 +149,14 @@ const DashboardPage = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">Total Verified Income</h3>
-                  <p className="text-3xl font-bold text-foreground mb-1">₹ 2,50,000</p>
-                  <p className="text-sm text-accent">+15% from last month</p>
+                  <p className="text-3xl font-bold text-foreground mb-1">
+                    ₹ {calculatedMetrics.totalNetIncome.toLocaleString('en-IN')}
+                  </p>
+                  <p className="text-sm text-accent">+{calculatedMetrics.trend}% from last month</p>
                 </div>
                 <div className="text-center">
                   <Shield className="h-12 w-12 text-primary mx-auto mb-1" />
-                  <p className="text-lg font-bold text-foreground">720/850</p>
+                  <p className="text-lg font-bold text-foreground">{calculatedMetrics.stabilityScore}/850</p>
                   <TrendingUp className="h-4 w-4 text-success mx-auto" />
                 </div>
               </div>
@@ -119,14 +165,16 @@ const DashboardPage = () => {
             <Card className="p-6 border-2 border-accent shadow-card animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Total Verified Income</h3>
-                  <p className="text-3xl font-bold text-foreground mb-1">₹ 2,50,000</p>
-                  <p className="text-sm text-accent">+15% from last month</p>
+                  <h3 className="text-sm font-medium text-muted-foreground mb-1">Work Activity</h3>
+                  <p className="text-3xl font-bold text-foreground mb-1">
+                    {calculatedMetrics.activeWeeks}/{calculatedMetrics.totalWeeks} weeks
+                  </p>
+                  <p className="text-sm text-accent">Active work periods</p>
                 </div>
                 <div className="text-center">
                   <FileText className="h-12 w-12 text-primary mx-auto mb-1" />
-                  <p className="text-lg font-bold text-foreground">3 Certificates</p>
-                  <p className="text-xs text-muted-foreground">Expiring soon: 1</p>
+                  <p className="text-lg font-bold text-foreground">{calculatedMetrics.platformBreakdown.length} Platforms</p>
+                  <p className="text-xs text-muted-foreground">{calculatedMetrics.platformBreakdown.map(p => p.platform).join(', ')}</p>
                 </div>
               </div>
             </Card>

@@ -6,41 +6,139 @@ import { useApp, CertificateData } from "@/contexts/AppContext";
 import { useToast } from "@/hooks/use-toast";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
+import { format } from "date-fns";
 
 const CertificatePage = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
-  const { metrics, certificate, setCertificate, uploadedFiles } = useApp();
+  const { signOut, user } = useAuth();
+  const { metrics, certificate, setCertificate } = useApp();
   const { toast } = useToast();
   const [generatedCert, setGeneratedCert] = useState<CertificateData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
-    if (!metrics) {
-      navigate('/dashboard');
-      return;
-    }
+    const generateCertificate = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
 
-    if (certificate) {
-      setGeneratedCert(certificate);
-    } else {
-      const certId = `KAM-${new Date().getFullYear()}-${Math.floor(Math.random() * 90000) + 10000}`;
-      const platforms = [...new Set(uploadedFiles.map(f => f.platform))];
-      
-      const newCert: CertificateData = {
-        id: certId,
-        workerName: "Rajash Kumar",
-        period: "March 2024",
-        totalNetIncome: 250000,
-        stabilityScore: 82,
-        platforms: platforms.length > 0 ? platforms : ['Zomato', 'Swiggy'],
-        dateIssued: new Date(),
-        verificationHash: `SHA-256: ${Math.random().toString(36).substring(2, 15)}`,
-      };
+      if (!metrics) {
+        navigate('/dashboard');
+        return;
+      }
 
-      setGeneratedCert(newCert);
-      setCertificate(newCert);
-    }
-  }, [metrics, certificate]);
+      if (certificate) {
+        setGeneratedCert(certificate);
+        return;
+      }
+
+      setIsGenerating(true);
+
+      try {
+        // Fetch transactions to get period and platforms
+        const { data: transactions, error: txnError } = await supabase
+          .from('transactions')
+          .select('txn_date, platform')
+          .eq('user_id', user.id)
+          .order('txn_date', { ascending: true });
+
+        if (txnError) throw txnError;
+
+        if (!transactions || transactions.length === 0) {
+          toast({
+            title: "No data found",
+            description: "Upload earnings data first",
+            variant: "destructive",
+          });
+          navigate('/upload');
+          return;
+        }
+
+        // Get earliest and latest dates
+        const dates = transactions
+          .map(t => t.txn_date)
+          .filter(d => d !== null)
+          .map(d => new Date(d!));
+        
+        const earliestDate = dates.length > 0 ? new Date(Math.min(...dates.map(d => d.getTime()))) : new Date();
+        const latestDate = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))) : new Date();
+
+        // Format period
+        const period = `${format(earliestDate, 'MMMM yyyy')} - ${format(latestDate, 'MMMM yyyy')}`;
+
+        // Get unique platforms
+        const platforms = [...new Set(transactions.map(t => t.platform).filter(p => p))];
+
+        // Generate certificate ID
+        const certId = `KAM-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 90000) + 10000).padStart(5, '0')}`;
+
+        // Get user name from metadata or email
+        const workerName = user.user_metadata?.name || user.email || 'Worker';
+
+        // Generate verification hash
+        const hashData = `${certId}-${user.id}-${metrics.totalNetIncome}-${metrics.stabilityScore}-${new Date().toISOString()}`;
+        const hashBuffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(hashData));
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const verificationHash = `SHA-256: ${hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 15)}`;
+
+        const newCert: CertificateData = {
+          id: certId,
+          workerName,
+          period,
+          totalNetIncome: metrics.totalNetIncome,
+          stabilityScore: metrics.stabilityScore,
+          platforms,
+          dateIssued: new Date(),
+          verificationHash,
+        };
+
+        // Save to database
+        try {
+          const { error: certError } = await supabase
+            .from('certificates')
+            .insert({
+              id: certId,
+              user_id: user.id,
+              period_start: earliestDate.toISOString(),
+              period_end: latestDate.toISOString(),
+              net_income: metrics.totalNetIncome,
+              stability_score: metrics.stabilityScore,
+              verification_hash: verificationHash,
+              is_active: true,
+              date_issued: new Date().toISOString(),
+            });
+
+          if (certError) {
+            console.error('Failed to save certificate to database:', certError);
+            toast({
+              title: "Warning",
+              description: "Certificate generated but not saved to database",
+              variant: "destructive",
+            });
+          }
+        } catch (saveError) {
+          console.error('Error saving certificate:', saveError);
+        }
+
+        setGeneratedCert(newCert);
+        setCertificate(newCert);
+      } catch (error) {
+        console.error('Error generating certificate:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate certificate. Please try again.",
+          variant: "destructive",
+        });
+        navigate('/dashboard');
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    generateCertificate();
+  }, [user, metrics, certificate]);
 
   const handleDownload = () => {
     toast({
@@ -56,10 +154,13 @@ const CertificatePage = () => {
     });
   };
 
-  if (!generatedCert) {
+  if (!generatedCert || isGenerating) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full" />
+          <p className="text-muted-foreground">Generating certificate...</p>
+        </div>
       </div>
     );
   }
@@ -105,8 +206,12 @@ const CertificatePage = () => {
               
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Total Verified Income</p>
-                <p className="text-5xl font-bold text-foreground mb-2">₹ 2,50,000</p>
-                <p className="text-accent font-medium">+15% Verified Income (March 2024)</p>
+                <p className="text-5xl font-bold text-foreground mb-2">
+                  ₹ {generatedCert.totalNetIncome.toLocaleString('en-IN')}
+                </p>
+                <p className="text-accent font-medium">
+                  Stability Score: {Math.round((generatedCert.stabilityScore / 850) * 100)}% ({generatedCert.period})
+                </p>
               </div>
             </div>
 
@@ -119,7 +224,7 @@ const CertificatePage = () => {
               </div>
               
               <div className="text-center space-y-1">
-                <p className="text-sm text-muted-foreground">Certificate ID: #KM024-03-A7B9</p>
+                <p className="text-sm text-muted-foreground">Certificate ID: {generatedCert.id}</p>
                 <p className="text-sm text-muted-foreground">Issued to: {generatedCert.workerName}</p>
               </div>
 
@@ -144,31 +249,29 @@ const CertificatePage = () => {
 
         {/* Recent Platforms */}
         <Card className="p-8 shadow-card mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <h2 className="text-2xl font-bold text-foreground mb-6">Recent Platforms</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-6">Verified Platforms</h2>
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-success rounded-xl flex items-center justify-center">
-                <span className="text-white text-xl">₹</span>
-              </div>
-              <div>
-                <p className="font-semibold text-foreground">Platform_march 2024.csv</p>
-                <p className="text-sm text-muted-foreground">20.13.40 48 vepled</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-destructive rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">Z</span>
-              </div>
-              <span className="font-semibold text-foreground">Zomato</span>
-            </div>
+            {generatedCert.platforms.map((platform, index) => {
+              const platformColors: Record<string, { bg: string; initial: string }> = {
+                'zomato': { bg: 'bg-destructive', initial: 'Z' },
+                'swiggy': { bg: 'bg-[#FF5200]', initial: 'S' },
+                'uber': { bg: 'bg-black', initial: 'U' },
+                'ola': { bg: 'bg-success', initial: 'O' },
+                'dunzo': { bg: 'bg-blue-500', initial: 'D' },
+              };
 
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-[#FF5200] rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">S</span>
-              </div>
-              <span className="font-semibold text-foreground">Swiggy</span>
-            </div>
+              const platformKey = platform.toLowerCase();
+              const color = platformColors[platformKey] || { bg: 'bg-primary', initial: platform.charAt(0).toUpperCase() };
+
+              return (
+                <div key={index} className="flex items-center gap-4">
+                  <div className={`w-12 h-12 ${color.bg} rounded-full flex items-center justify-center`}>
+                    <span className="text-white font-bold">{color.initial}</span>
+                  </div>
+                  <span className="font-semibold text-foreground capitalize">{platform}</span>
+                </div>
+              );
+            })}
           </div>
         </Card>
 

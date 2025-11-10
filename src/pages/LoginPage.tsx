@@ -32,7 +32,9 @@ const LoginPage = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/upload`,
+            emailRedirectTo: window.location.hostname === 'localhost'
+      ? 'http://localhost:3001/upload'
+      : 'https://kamai-omega.vercel.app/upload',
           },
         });
 
@@ -62,7 +64,9 @@ const LoginPage = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/upload`,
+          redirectTo: window.location.hostname === 'localhost' 
+          ? 'http://localhost:3001/upload'
+          : 'https://kamai-omega.vercel.app/upload',
         },
       });
 

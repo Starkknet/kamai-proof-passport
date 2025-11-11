@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileCheck, Coins, Shield } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -145,15 +145,15 @@ const Index = () => {
             </div>
 
             <div className="flex gap-6 text-sm">
-              <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+              <Link to="/about" className="text-muted-foreground hover:text-accent transition-colors">
                 About
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+              </Link>
+              <Link to="/privacy" className="text-muted-foreground hover:text-accent transition-colors">
                 Privacy
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-accent transition-colors">
+              </Link>
+              <Link to="/contact" className="text-muted-foreground hover:text-accent transition-colors">
                 Contact
-              </a>
+              </Link>
             </div>
           </div>
         </div>

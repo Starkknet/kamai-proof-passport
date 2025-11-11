@@ -15,6 +15,9 @@ import SettingsPage from "./pages/SettingsPage";
 import ConnectPlatformsPage from "./pages/ConnectPlatformsPage";
 import VerifyPage from "./pages/VerifyPage";
 import NotFound from "./pages/NotFound";
+import AboutPage from "./pages/AboutPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import ContactPage from "./pages/ContactPage";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +37,9 @@ const App = () => (
           <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
           <Route path="/connect-platforms" element={<ProtectedRoute><ConnectPlatformsPage /></ProtectedRoute>} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

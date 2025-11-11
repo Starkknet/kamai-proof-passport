@@ -8,6 +8,8 @@ import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
 import { format } from "date-fns";
+import jsPDF from "jspdf";
+import QRCode from "qrcode";
 
 const CertificatePage = () => {
   const navigate = useNavigate();
@@ -140,11 +142,146 @@ const CertificatePage = () => {
     generateCertificate();
   }, [user, metrics, certificate]);
 
-  const handleDownload = () => {
-    toast({
-      title: "Certificate downloaded!",
-      description: "Your income certificate has been saved as PDF",
-    });
+  const handleDownload = async () => {
+    if (!generatedCert) {
+      toast({
+        title: "Error",
+        description: "Certificate data not available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // Colors
+      const indigo = '#1E2066';
+      const orange = '#F7931A';
+      const gray = '#666666';
+
+      // Set font
+      pdf.setFont('helvetica');
+
+      // Header - KAMAI INCOME CERTIFICATE
+      pdf.setFontSize(20);
+      pdf.setTextColor(indigo);
+      pdf.text('KAMAI INCOME CERTIFICATE', 105, 25, { align: 'center' });
+
+      // Certificate ID and Issue Date
+      pdf.setFontSize(10);
+      pdf.setTextColor(gray);
+      pdf.text(`Certificate ID: ${generatedCert.id}`, 105, 35, { align: 'center' });
+      pdf.text(`Issue Date: ${format(generatedCert.dateIssued, 'dd MMM yyyy')}`, 105, 42, { align: 'center' });
+
+      // Divider line
+      pdf.setDrawColor(orange);
+      pdf.setLineWidth(0.5);
+      pdf.line(20, 48, 190, 48);
+
+      // Worker Name
+      pdf.setFontSize(12);
+      pdf.setTextColor(indigo);
+      pdf.text('Worker Name:', 25, 60);
+      pdf.setTextColor(gray);
+      pdf.text(generatedCert.workerName, 25, 67);
+
+      // Period
+      pdf.setTextColor(indigo);
+      pdf.text('Period:', 25, 77);
+      pdf.setTextColor(gray);
+      pdf.text(generatedCert.period, 25, 84);
+
+      // Divider line
+      pdf.setDrawColor(orange);
+      pdf.line(20, 92, 190, 92);
+
+      // VERIFIED NET INCOME
+      pdf.setFontSize(14);
+      pdf.setTextColor(indigo);
+      pdf.text('VERIFIED NET INCOME', 105, 105, { align: 'center' });
+      
+      pdf.setFontSize(24);
+      pdf.setTextColor(orange);
+      pdf.text(`₹ ${generatedCert.totalNetIncome.toLocaleString('en-IN')}`, 105, 117, { align: 'center' });
+
+      // STABILITY SCORE
+      pdf.setFontSize(14);
+      pdf.setTextColor(indigo);
+      pdf.text('STABILITY SCORE', 105, 135, { align: 'center' });
+      
+      pdf.setFontSize(18);
+      pdf.setTextColor(gray);
+      const stabilityDisplay = `${generatedCert.stabilityScore}/850 (${Math.round((generatedCert.stabilityScore / 850) * 100)}%)`;
+      pdf.text(stabilityDisplay, 105, 145, { align: 'center' });
+
+      // PLATFORMS
+      pdf.setFontSize(14);
+      pdf.setTextColor(indigo);
+      pdf.text('VERIFIED PLATFORMS', 105, 160, { align: 'center' });
+      
+      pdf.setFontSize(12);
+      pdf.setTextColor(gray);
+      pdf.text(generatedCert.platforms.join(', '), 105, 168, { align: 'center' });
+
+      // Divider line
+      pdf.setDrawColor(orange);
+      pdf.line(20, 175, 190, 175);
+
+      // Generate QR Code
+      const verifyUrl = `https://kamai-omega.vercel.app/verify/${generatedCert.id}`;
+      const qrDataUrl = await QRCode.toDataURL(verifyUrl, {
+        width: 300,
+        margin: 1,
+        color: {
+          dark: '#1E2066',
+          light: '#FFFFFF'
+        }
+      });
+
+      // Add QR code to PDF (centered)
+      const qrSize = 40;
+      pdf.addImage(qrDataUrl, 'PNG', 85, 182, qrSize, qrSize);
+
+      pdf.setFontSize(10);
+      pdf.setTextColor(gray);
+      pdf.text('Scan to verify', 105, 227, { align: 'center' });
+
+      // Verification Hash
+      pdf.setFontSize(9);
+      pdf.setTextColor(indigo);
+      pdf.text('Verification Hash:', 25, 240);
+      pdf.setFontSize(8);
+      pdf.setTextColor(gray);
+      pdf.text(generatedCert.verificationHash, 25, 246);
+
+      // Footer text
+      pdf.setFontSize(9);
+      pdf.setTextColor(gray);
+      pdf.text('This certificate is cryptographically secured and can be verified at:', 105, 260, { align: 'center' });
+      pdf.setTextColor(orange);
+      pdf.text('https://kamai-omega.vercel.app/verify', 105, 267, { align: 'center' });
+
+      // Save PDF
+      pdf.save(`KAMAI_Certificate_${generatedCert.id}.pdf`);
+
+      toast({
+        title: "Certificate downloaded!",
+        description: "Your income certificate has been saved as PDF",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleShare = () => {

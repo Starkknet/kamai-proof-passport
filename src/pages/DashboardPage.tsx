@@ -7,6 +7,8 @@ import { useApp, IncomeMetrics } from "@/contexts/AppContext";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const DashboardPage = () => {
   const navigate = useNavigate();
@@ -127,19 +129,45 @@ const DashboardPage = () => {
               <a href="/" className="text-accent font-medium border-b-2 border-accent pb-1">Dashboard</a>
               <a href="/history" className="text-foreground hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-foreground hover:text-accent transition-colors">Settings</a>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={signOut}
-                className="border-accent text-accent hover:bg-accent hover:text-white"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+              {user?.email === 'demo@kamai.in' ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                  className="border-accent text-accent hover:bg-accent hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Exit Demo
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={signOut}
+                  className="border-accent text-accent hover:bg-accent hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              )}
             </div>
           </div>
         </div>
       </nav>
+
+      {/* Demo Banner */}
+      {user?.email === 'demo@kamai.in' && (
+        <div className="bg-accent/10 border-b border-accent/20">
+          <div className="container mx-auto px-4 py-3">
+            <Alert className="border-0 bg-transparent">
+              <Info className="h-4 w-4 text-accent" />
+              <AlertDescription className="text-sm text-foreground">
+                📺 <strong>Demo Mode</strong> - This is sample data. <a href="/login" className="underline font-medium text-accent hover:text-accent/80">Sign up</a> to upload your own earnings!
+              </AlertDescription>
+            </Alert>
+          </div>
+        </div>
+      )}
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Metric Cards */}

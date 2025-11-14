@@ -5,11 +5,14 @@ import { Camera, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 const SettingsPage = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState("security");
+  const isDemoUser = user?.email === 'demo@kamai.in';
 
   return (
     <div className="min-h-screen bg-background">
@@ -28,15 +31,27 @@ const SettingsPage = () => {
               <a href="/" className="text-primary font-medium hover:text-accent transition-colors">Dashboard</a>
               <a href="/history" className="text-primary font-medium hover:text-accent transition-colors">History</a>
               <a href="/settings" className="text-accent font-medium border-b-2 border-accent pb-1">Settings</a>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={signOut}
-                className="border-accent text-accent hover:bg-accent hover:text-white"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+              {isDemoUser ? (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => navigate('/login')}
+                  className="border-accent text-accent hover:bg-accent hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Exit Demo
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={signOut}
+                  className="border-accent text-accent hover:bg-accent hover:text-white"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -86,10 +101,19 @@ const SettingsPage = () => {
 
             {/* Form Content */}
             <div className="md:col-span-3 space-y-6">
+              {isDemoUser && (
+                <Alert className="border-accent/20 bg-accent/10">
+                  <Info className="h-4 w-4 text-accent" />
+                  <AlertDescription className="text-sm text-foreground">
+                    Demo users cannot modify settings. <a href="/login" className="underline font-medium text-accent">Sign up</a> to customize your account.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div>
                 <label className="block text-sm font-medium text-muted-foreground mb-2">Full Name</label>
                 <div className="relative">
-                  <Input className="h-12 pr-10" placeholder="Full Name" />
+                  <Input className="h-12 pr-10" placeholder="Full Name" disabled={isDemoUser} />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground">₹</span>
                 </div>
               </div>
@@ -114,7 +138,10 @@ const SettingsPage = () => {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button className="bg-accent hover:bg-accent/90 text-white px-8">
+                <Button 
+                  className="bg-accent hover:bg-accent/90 text-white px-8"
+                  disabled={isDemoUser}
+                >
                   Save Changes
                 </Button>
               </div>

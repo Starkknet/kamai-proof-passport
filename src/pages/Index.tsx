@@ -1,10 +1,43 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileCheck, Coins, Shield } from "lucide-react";
+import { FileCheck, Coins, Shield, Play } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+
+  const handleDemoLogin = async () => {
+    setIsDemoLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: 'demo@kamai.in',
+        password: 'DemoKamai2024',
+      });
+
+      if (error) {
+        toast({
+          title: "Demo unavailable",
+          description: "Please try again or sign up for a free account",
+          variant: "destructive",
+        });
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDemoLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -47,13 +80,25 @@ const Index = () => {
                 <p className="text-xl text-accent font-medium">
                   Empowering India's Gig Economy
                 </p>
-                <Button 
-                  size="lg" 
-                  className="bg-accent hover:bg-accent/90 text-white text-lg px-8"
-                  onClick={() => navigate('/upload')}
-                >
-                  ₹ Get Started
-                </Button>
+                <div className="flex gap-4">
+                  <Button 
+                    size="lg" 
+                    className="bg-accent hover:bg-accent/90 text-white text-lg px-8"
+                    onClick={() => navigate('/upload')}
+                  >
+                    ₹ Get Started
+                  </Button>
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    className="border-accent text-accent hover:bg-accent hover:text-white text-lg px-8"
+                    onClick={handleDemoLogin}
+                    disabled={isDemoLoading}
+                  >
+                    <Play className="h-5 w-5 mr-2" />
+                    {isDemoLoading ? "Loading..." : "Try Demo"}
+                  </Button>
+                </div>
               </div>
               <div className="flex justify-center">
                 <div className="w-full max-w-md">
